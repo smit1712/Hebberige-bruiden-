@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>SignIn Page</title>
+    <title>Account Page</title>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -27,7 +27,7 @@
         <div class="nav-wrapper red">
             <a href="~/index.cshtml" class="brand-logo right">GiftTool!</a>
             <ul id="nav-mobile" class="left">
-                <li><a href="#">SignIn</a></li>
+                <li><a href="#">Account</a></li>
 
             </ul>
         </div>
@@ -41,33 +41,7 @@
         </div>
     </div>
     <!-- Page Layout here -->
-    <!--SignIn Form-->
-    <div class="row">
-        <form class="col s12">
-            <div class="row">
-                <div class="input-field col s6">
-                    <input id="Loginname" type="text" class="validate">
-                    <label for="Loginname">Loginname</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="password" type="password" class="validate">
-                    <label for="password">Password</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="email" type="email" class="validate">
-                    <label for="email">Email</label>
-                </div>
-            </div>
-            <button class="btn waves-effect waves-light red" type="submit" name="action">
-                SignIn
-                <i class="material-icons right"></i>
-            </button>
-        </form>
-    </div>
+
 
     <!--Side NAV for Users-->
     <ul id="slide-out" class="side-nav">
@@ -81,13 +55,14 @@
             <div class="divider"></div>
         </li>
         <li>
-            <a class="waves-effect" href="~/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
+            <a class="waves-effect" href="~/SignIn.cshtml">Signin</a>
         </li>
     </ul>
     <!--Scripts-->
     <script>
         // Initialize collapse button
         $(".button-collapse").sideNav();
+
     </script>
 </body>
 
