@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>GiftTool</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="utf-8" />
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="~/materialize.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.js"></script>
+
+    <!--Navigatie header-->
+    <nav>
+        <div class="nav-wrapper red">
+            <a href="~/index.cshtml" class="brand-logo right">GiftTool!</a>            
+            <ul id="nav-mobile" class="left">
+                <li><a href="~/LoginPage.cshtml">Login</a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Page Layout here -->
+    <!-- SideNav-->
+    <div class=" row">
+        <div class=" col s1 m1 l1">
+            <ul>
+                <li><a href="#"  data-activates="slide-out" class="button-collapse waves-effect"><i class="material-icons">menu</i> </a></li>
+            </ul>
+        </div>
+    </div>
+    <!--GiftKey-->
+    <div class="row">
+        <div class="col s6 m6 l6">
+            <div class="row">
+                <div class="input-field">
+                    <input id="CollectioniD" type="text" />
+                    <label for="CollectioniD"> GiftKey</label>
+                </div>
+            </div>
+                <!-- GiftList-->
+            <div class=" col s10 m10 l10">
+                <ul class="collection">
+                    <li class="collection-item waves-effect"> <a href="//bol.com">koelkast</a></li>
+                    <li class="collection-item waves-effect"><a href="//bol.com">vriezer</a></li>
+                    <li class="collection-item waves-effect"><a href="//bol.com">afwasmachine</a></li>
+                    <li class="collection-item waves-effect"><a href="//bol.com">koffieapparaat</a></li>
+                </ul>
+            </div>
+        </div>
+        <!--Name&Gift-->
+        <div class="col s6 m6 l6">
+            <div class=" row ">
+                <div class=" input-field">
+                    <input name=" name" type="text" id="NameID" />
+                    <label for=" name">Name</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class=" input-field col s10 m10 l10">
+                    <select>
+                        <option value=""disabled selected></option>
+                        <option value="koelkast">koelkast</option>
+                        <option value="vriezer">vriezer</option>
+                        <option value="afwasmachine">afwasmachine</option>
+                        <option value="koffieapparaat">koffieapparaat</option>
+                    </select>
+                    <label>Choose your Gift</label>
+                </div>
+            </div>
+        </div>
+        </div>
+
+    <!--Side NAV for Users-->
+    <ul id="slide-out" class="side-nav">
+        <li>
+            <a class="waves-effect" href="~/LoginPage.cshtml"> LogIn  </a>
+        </li>
+        <li>
+            <div class="divider"></div>
+        </li>
+        <li>
+            <a class="waves-effect" href="~/SignIn.cshtml">Signin</a>
+        </li>
+    </ul>
+    <!--Scripts-->
+    <script>
+        // Initialize collapse button
+        $(".button-collapse").sideNav();
+        // initialize select dropdown
+        $(document).ready(function () {
+            $('select').material_select();
+        });
+    </script>
+</body>
+
+</html>
