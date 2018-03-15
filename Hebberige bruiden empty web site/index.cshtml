@@ -1,4 +1,47 @@
-﻿<!DOCTYPE html>
+﻿@using WebMatrix.Data;
+
+@{
+
+    // c# Database code
+    string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\Gift_database.mdf;Integrated Security=True";
+    string provider = "System.Data.SqlClient";
+    Database db = Database.OpenConnectionString(connectionString, provider);
+    //Input giftkey code
+    dynamic SelectGiftQuery = null;
+    string key = Request["GiftKeyname"];
+    if (key == null)
+    {
+        key = null; 
+
+        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '0'");
+    }
+    else
+    {
+        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '" + key + "'");
+    }
+
+    // choose gift code
+    int count = 0;
+    string SelectedGift = null;
+    dynamic RemoveGiftQuery = null;
+    dynamic RemoveGiftkeyQuery = null;
+    RemoveGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '" + key + "'");
+    RemoveGiftkeyQuery = db.Query("SELECT GiftKey from Gifts where GiftKey = '" + key + "'");
+    SelectedGift = Request["ChooseGift"];
+
+    foreach (dynamic row in db.Query("SELECT Gift From Gifts WHERE Gift = '" + SelectedGift + "'  "))
+    {
+        if (RemoveGiftQuery[count].Gift == SelectedGift && RemoveGiftkeyQuery[count].GiftKey == key)
+        {
+
+            db.Execute("DELETE FROM Gifts where Gift = '" + SelectedGift + "' AND Giftkey = '" + key + "'");
+            break;
+        }
+        count++;
+    }
+
+    }
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>GiftTool</title>
@@ -20,7 +63,7 @@
     <!--Navigatie header-->
     <nav>
         <div class="nav-wrapper red">
-            <a href="~/index.cshtml" class="brand-logo right">GiftTool!</a>            
+            <a href="~/index.cshtml" class="brand-logo right">GiftTool!</a>
             <ul id="nav-mobile" class="left">
                 <li><a href="#">Home</a></li>
             </ul>
@@ -31,51 +74,64 @@
     <div class=" row">
         <div class=" col s1 m1 l1">
             <ul>
-                <li><a href="#"  data-activates="slide-out" class="button-collapse waves-effect"><i class="material-icons">menu</i> </a></li>
+                <li><a href="#" data-activates="slide-out" class="button-collapse waves-effect"><i class="material-icons">menu</i> </a></li>
             </ul>
         </div>
     </div>
     <!--GiftKey-->
-    <div class="row">
-        <div class="col s6 m6 l6">
-            <div class="row">
+    <form method="post">
+        <div class="row">
+            <div class="col s5 m5 l5">
+
                 <div class="input-field">
-                    <input id="CollectioniD" type="text" />
+                    <input id="CollectioniD" type="text" name="GiftKeyname" value="@key" class="validate" />
                     <label for="CollectioniD"> GiftKey</label>
                 </div>
-            </div>
-                <!-- GiftList-->
-            <div class=" col s10 m10 l10">
-                <ul class="collection">
-                    <li class="collection-item waves-effect"> <a href="//bol.com">koelkast</a></li>
-                    <li class="collection-item waves-effect"><a href="//bol.com">vriezer</a></li>
-                    <li class="collection-item waves-effect"><a href="//bol.com">afwasmachine</a></li>
-                    <li class="collection-item waves-effect"><a href="//bol.com">koffieapparaat</a></li>
-                </ul>
+
+                <div class=" col s1 m1 l1">
+                    <button class="btn waves-effect waves-light" type="submit" name="action">
+                        Submit
+                        <i class="material-icons right">send</i>
+
+                    </button>
+                </div>
+
             </div>
         </div>
         <!--Name&Gift-->
-        <div class="col s6 m6 l6">
-            <div class=" row ">
-                <div class=" input-field">
-                    <input name=" name" type="text" id="NameID" />
-                    <label for=" name">Name</label>
-                </div>
-            </div>
-            <div class="row">
+        <div class="row">
+            <div class="col s5 m5 l5 ">
                 <div class=" input-field col s10 m10 l10">
-                    <select>
-                        <option value=""disabled selected></option>
-                        <option value="koelkast">koelkast</option>
-                        <option value="vriezer">vriezer</option>
-                        <option value="afwasmachine">afwasmachine</option>
-                        <option value="koffieapparaat">koffieapparaat</option>
+                    <select name="ChooseGift">
+                        <option value="" disabled selected></option>
+                        @{ int Giftcount = 0;
+                        foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = '" + key + "'"))
+                        {<option value="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</option>
+                                Giftcount++;}}                        
                     </select>
                     <label>Choose your Gift</label>
                 </div>
+                <button class="btn waves-effect waves-light" type="submit" name="action">
+                    Submit
+                    <i class="material-icons right">send</i>
+                </button>
             </div>
         </div>
+    </form>
+    <!-- GiftList-->
+    <div class="row">
+        <div class=" col s5 m5 l5">
+            <ul class="collection">                
+                @{Giftcount = 0;
+                        foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = '" + key + "'"))                        {
+                        <li class="collection-item waves-effect"><a href="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</a></li>
+                        Giftcount++;}}
+            </ul>
         </div>
+    </div>
+
+
+
 
     <!--Side NAV for Users-->
     <ul id="slide-out" class="side-nav">
@@ -92,6 +148,7 @@
             <a class="waves-effect" href="~/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
         </li>
     </ul>
+
     <!--Scripts-->
     <script>
         // Initialize collapse button

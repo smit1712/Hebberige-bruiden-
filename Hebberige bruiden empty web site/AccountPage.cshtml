@@ -1,4 +1,114 @@
-﻿<!DOCTYPE html>
+﻿@using WebMatrix.Data;
+@{ // c# Database code
+    string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\Gift_database.mdf;Integrated Security=True";
+    string provider = "System.Data.SqlClient";
+    Database db = Database.OpenConnectionString(connectionString, provider);
+
+    // form variable
+    string ID = null;
+    var Creator_Name = "Admin";
+    string Numberlist = Request["ChooseList"];
+    if (Session["NumberList"] as string != @Request["ChooseList"])
+    {
+        Numberlist = @Request["ChooseList"];
+    }
+    string Clist = Request["ChooseList"];
+
+    int priority = 0;
+    string strpriority = null;
+    string CountList = null;
+    dynamic Listvalue = null;
+
+
+
+    dynamic Newlist = null;
+    Newlist = Request["Newlist"];
+    bool insertlist = false;
+    List<string> Giftlist = new List<string>();
+    List<string> oldgiftlist = new List<string>();
+    List<int> Priority = new List<int>();
+    // if (Session["SPriority"] !=null) { Priority = Session["SPriority"] as List<int>; }
+
+
+    oldgiftlist = Session["GiftList"] as List<string>;
+    Session["GiftList"] = Giftlist;
+
+    if (Session["NumberList"] == null)
+    {
+        Numberlist = Request["ChooseList"];
+    }
+    else
+    {
+        Numberlist = Session["NumberList"] as string;
+    }
+    Session["NumberList"] = null;
+    if (Newlist != null)
+    {
+        foreach (dynamic row in db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='" + Creator_Name + "' group by Creators_ListID"))
+        {
+            int Liststring = row.Creators_Listid;
+            if (Liststring.ToString() == Newlist)
+            {
+                insertlist = false;
+                break;
+            }
+            else
+            {
+                insertlist = true;
+            }
+
+        }
+        if (insertlist == true)
+        {
+            db.Execute("insert INTO Gifts (Gift,GiftKey,Priority,Creator_Name,Creators_ListID) VALUES('insert1','1','2','" + Creator_Name + "','" + Newlist + "')");
+        }
+    }
+    dynamic Giftquery = db.Query("Select * from Gifts where Creators_ListID = '" + Clist + "' ");
+    dynamic test = null;
+    int listcount = 0;
+
+
+
+    dynamic SelectListQueury = null;
+    SelectListQueury = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='admin' group by Creators_ListID");
+
+
+
+    dynamic giftkey = Request["GiftKey"];
+
+    List<string> alteredlist = new List<string>();
+    int count = 0;
+
+    if (oldgiftlist != null && Request["Gift" + count] != null)
+    {
+        foreach (dynamic row in oldgiftlist)
+        {
+            test = Request["Gift" + count];
+            strpriority = Request["Priority Gift" + count];
+            priority = Convert.ToInt16(strpriority);
+            Priority.Add(priority);
+            alteredlist.Add(test);
+            count++;
+        }
+        count = 0;
+        foreach (dynamic row in alteredlist)
+        {
+            db.Execute("update Gifts set Gift = '" + alteredlist[count] + "' , GiftKey = '" + giftkey + "', Priority = '"+Priority[count]+"' where Gift = '" + oldgiftlist[count] + "' AND Creators_ListID = '" + Numberlist + "' ");
+            count++;
+        }
+
+
+    }
+
+
+    //if (false == giftkey.IsEmpty())
+    //{
+    //    db.Execute(insertQuery, Creator_Name, gift1, gift2, gift3, gift4, giftkey);
+    //    // Response.Redirect("~/AccountPage.cshtml");
+
+    //}
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Account Page</title>
@@ -41,7 +151,100 @@
         </div>
     </div>
     <!-- Page Layout here -->
+    <div class="row">
+        <div class=" col s5 m5 l5">
+            <form method="post">
+                <div class="row">
+                    <div class=" input-field col s10 m10 l10">
+                        <select name="ChooseList">
+                            <option value="@Clist" selected></option>
+                            @{ int Giftcount = 0;
+                                dynamic uniqueListID = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='admin' group by Creators_ListID");
+                                foreach (dynamic row in uniqueListID)
+                                {
+                                    int CountListint = SelectListQueury[Giftcount].Creators_ListID;
+                                    CountList = CountListint.ToString();
+                                    <option value="@CountList">@CountList</option>
+                                    Giftcount++;
+                                }}
+                        </select>
+                        <label>Choose your GiftList</label>
+                    </div>
+                    <button class="btn waves-effect waves-light" type="submit" name="action">
+                        Submit
+                        <i class="material-icons right">send</i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <form method="post">
+            <div class=" = col s6 m6 l6">
+                <div class=" input-field">
+                    <input name="Newlist" id="Newlist" type="text" class="validate" value="@Newlist" />
+                    <label for="Newlist">New list</label>
+                </div>
+                <button class="btn waves-effect waves-light" type="submit" name="action">
+                    Submit new list
+                    <i class="material-icons right">send</i>
+                </button>
+            </div>
+        </form>
+    </div>
 
+
+
+    <form method="post">
+        @{
+
+            int Listcount = 0;
+
+            foreach (dynamic row in Giftquery)
+            {
+                String Name = "Gift" + Listcount;
+                string PName = "Priority Gift" + Listcount;
+                
+                if (alteredlist.Count == 0)
+                {
+                    Listvalue = Giftquery[Listcount].Gift;
+                    priority = Giftquery[Listcount].Priority;
+                }
+                else
+                {
+                    Listvalue = alteredlist[Listcount];
+                    priority = Giftquery[Listcount].Priority;
+
+                }
+            <div class="input-field col s6">
+                <input value="@Listvalue" id="@Name" type="text" class="validate" name="@Name">
+                <label class="active" for="@Name">@Name </label>
+            </div>
+            <div class="input-field col s6">
+                <input value="@priority" id="@PName" type="number" class="validate" name="@PName">
+                <label class="active" for="@PName">@PName </label>
+            </div>
+        Listcount++;
+        Giftlist.Add(Listvalue);
+        Priority.Add(priority);
+             }
+
+    giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = '" + Request["ChooseList"] + "'");
+    { }
+    if (((System.Collections.ObjectModel.ReadOnlyCollection<object>)giftkey).Count != 0)
+    {
+        <div class="input-field col s12">
+            <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey">
+            <label class="active" for="Giftkey">Giftkey</label>
+        </div>
+}
+        }
+        <div class="row col s4 m4 l4">
+            <button class="btn waves-effect waves-light" type="submit" name="action">
+                Submit
+                <i class="material-icons right">send</i>
+
+            </button>
+        </div>
+    </form>
 
     <!--Side NAV for Users-->
     <ul id="slide-out" class="side-nav">
@@ -58,10 +261,27 @@
             <a class="waves-effect" href="~/SignIn.cshtml">Signin</a>
         </li>
     </ul>
+
+
+
+    <!--C#-->
+    @{
+
+
+        Session["GiftList"] = Giftlist;
+        Session["SPriority"] = Priority;
+        Session["NumberList"] = Request["ChooseList"];
+
+    }
+
     <!--Scripts-->
     <script>
         // Initialize collapse button
         $(".button-collapse").sideNav();
+        // initialize select dropdown
+        $(document).ready(function () {
+            $('select').material_select();
+        });
 
     </script>
 </body>
