@@ -1,0 +1,17 @@
+﻿@{
+    Database db2 = Database.Open("Membershipdb");
+    if (WebSecurity.Initialized == false)
+    {
+        WebSecurity.InitializeDatabaseConnection("Membershipdb", "Users", "UserId", "UserName", true);
+    }
+
+
+
+    WebMail.SmtpServer = "mail.marblealley.nl";
+    WebMail.SmtpPort = 25;
+    WebMail.EnableSsl = true;
+    WebMail.UserName = "shop@marblealley.nl";
+    WebMail.Password = "thomthom";
+    WebMail.From = "shop@marblealley.nl";
+}
+

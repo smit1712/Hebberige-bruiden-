@@ -1,23 +1,47 @@
 ﻿@using WebMatrix.Data;
-@{ // c# Database code
+@using WebMatrix.WebData;
+@{ // MemberShip Code
+
+
+
+    // c# Database code
     string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\Gift_database.mdf;Integrated Security=True";
     string provider = "System.Data.SqlClient";
     Database db = Database.OpenConnectionString(connectionString, provider);
 
     // form variable
     string ID = null;
-    var Creator_Name = "Admin";
+    string Clist = null;
+    Boolean refresh = false;
+    var Creator_Name = WebSecurity.CurrentUserName;
     string Numberlist = Request["ChooseList"];
-    if (Session["NumberList"] as string != @Request["ChooseList"])
+    if (Request["ChooseList"] != null)
+    {
+        Clist = Request["ChooseList"];
+    }
+    else
+    {
+        Clist = Session["NumberList"] as string;
+    }
+    dynamic giftkey = null;
+    if (Session["NumberList"] as string != @Request["ChooseList"] && Session["Numberlist"] != null)
     {
         Numberlist = @Request["ChooseList"];
+        Clist = Session["NumberList"] as string;
+        //giftkey = Session["Giftkey"];
     }
-    string Clist = Request["ChooseList"];
+    else
+    {
+        Clist = Session["NumberList"] as string;
+    }
+    if (Session["NumberList"] != null) { Clist = Session["NumberList"] as string; }
 
     int priority = 0;
     string strpriority = null;
     string CountList = null;
     dynamic Listvalue = null;
+    string AddGift = "dont";
+
 
 
 
@@ -27,11 +51,10 @@
     List<string> Giftlist = new List<string>();
     List<string> oldgiftlist = new List<string>();
     List<int> Priority = new List<int>();
-    // if (Session["SPriority"] !=null) { Priority = Session["SPriority"] as List<int>; }
 
 
     oldgiftlist = Session["GiftList"] as List<string>;
-    Session["GiftList"] = Giftlist;
+
 
     if (Session["NumberList"] == null)
     {
@@ -60,22 +83,21 @@
         }
         if (insertlist == true)
         {
-            db.Execute("insert INTO Gifts (Gift,GiftKey,Priority,Creator_Name,Creators_ListID) VALUES('insert1','1','2','" + Creator_Name + "','" + Newlist + "')");
+            db.Execute("insert INTO Gifts (Gift,GiftKey,Priority,Creator_Name,Creators_ListID) VALUES('','1','1','" + Creator_Name + "','" + Newlist + "')");
         }
     }
-    dynamic Giftquery = db.Query("Select * from Gifts where Creators_ListID = '" + Clist + "' ");
-    dynamic test = null;
+    dynamic Giftquery = db.Query("Select * from Gifts where Creators_ListID = '" + Numberlist + "' AND Creator_Name = '" + Creator_Name + "'");
+    dynamic giftrequest = null;
     int listcount = 0;
 
 
-
     dynamic SelectListQueury = null;
-    SelectListQueury = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='admin' group by Creators_ListID");
+    SelectListQueury = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='" + Creator_Name + "' group by Creators_ListID");
 
 
-
-    dynamic giftkey = Request["GiftKey"];
-
+    if (Request["Giftkey"] != null) {
+        giftkey = Request["GiftKey"];
+    }
     List<string> alteredlist = new List<string>();
     int count = 0;
 
@@ -83,17 +105,18 @@
     {
         foreach (dynamic row in oldgiftlist)
         {
-            test = Request["Gift" + count];
+            giftrequest = Request["Gift" + count];
             strpriority = Request["Priority Gift" + count];
             priority = Convert.ToInt16(strpriority);
             Priority.Add(priority);
-            alteredlist.Add(test);
+            alteredlist.Add(giftrequest);
             count++;
         }
         count = 0;
         foreach (dynamic row in alteredlist)
         {
-            db.Execute("update Gifts set Gift = '" + alteredlist[count] + "' , GiftKey = '" + giftkey + "', Priority = '"+Priority[count]+"' where Gift = '" + oldgiftlist[count] + "' AND Creators_ListID = '" + Numberlist + "' ");
+            db.Execute("update Gifts set Gift = '" + alteredlist[count] + "' , GiftKey = '" + giftkey + "', Priority = '" + Priority[count] + "' where Gift = '" + oldgiftlist[count] + "' AND Creators_ListID = '" + Numberlist + "' AND Creator_Name = '" + Creator_Name + "' ");
+
             count++;
         }
 
@@ -123,15 +146,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--Import jQuery before materialize.js-->
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <script type="text/javascript" src="js/materialize.js"></script>
+    <script type="text/javascript" src="~/js/materialize.js"></script>
 
 
 </head>
 <body>
-    <!--Import jQuery before materialize.js-->
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <script type="text/javascript" src="js/materialize.js"></script>
-
     <!--Navigatie header-->
     <nav>
         <div class="nav-wrapper red">
@@ -157,16 +176,22 @@
                 <div class="row">
                     <div class=" input-field col s10 m10 l10">
                         <select name="ChooseList">
-                            <option value="@Clist" selected></option>
+                            <option value="@Numberlist" selected>@Numberlist  </option>
                             @{ int Giftcount = 0;
-                                dynamic uniqueListID = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='admin' group by Creators_ListID");
+                                dynamic uniqueListID = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='" + Creator_Name + "' group by Creators_ListID");
                                 foreach (dynamic row in uniqueListID)
                                 {
                                     int CountListint = SelectListQueury[Giftcount].Creators_ListID;
                                     CountList = CountListint.ToString();
                                     <option value="@CountList">@CountList</option>
                                     Giftcount++;
-                                }}
+
+                                }
+                                if (Request["ChooseList"] != null) {
+                                    refresh = true;
+                                }
+                                }
+
                         </select>
                         <label>Choose your GiftList</label>
                     </div>
@@ -184,9 +209,8 @@
                     <label for="Newlist">New list</label>
                 </div>
                 <button class="btn waves-effect waves-light" type="submit" name="action">
-                    Submit new list
-                    <i class="material-icons right">send</i>
-                </button>
+                        Create NewList                     
+                    </button>
             </div>
         </form>
     </div>
@@ -202,7 +226,7 @@
             {
                 String Name = "Gift" + Listcount;
                 string PName = "Priority Gift" + Listcount;
-                
+
                 if (alteredlist.Count == 0)
                 {
                     Listvalue = Giftquery[Listcount].Gift;
@@ -210,69 +234,117 @@
                 }
                 else
                 {
-                    Listvalue = alteredlist[Listcount];
+                    Listvalue = Giftquery[Listcount].Gift;
                     priority = Giftquery[Listcount].Priority;
 
                 }
-            <div class="input-field col s6">
-                <input value="@Listvalue" id="@Name" type="text" class="validate" name="@Name">
-                <label class="active" for="@Name">@Name </label>
-            </div>
-            <div class="input-field col s6">
-                <input value="@priority" id="@PName" type="number" class="validate" name="@PName">
-                <label class="active" for="@PName">@PName </label>
-            </div>
-        Listcount++;
-        Giftlist.Add(Listvalue);
-        Priority.Add(priority);
-             }
+                <div class="input-field col s6">
+                    <input value="@Listvalue" id="@Name" type="text" class="validate" name="@Name">
+                    <label class="active" for="@Name">@Name </label>
+                </div>
+                <div class="input-field col s6">
+                    <input value="@priority" id="@PName" type="number" class="validate" name="@PName">
+                    <label class="active" for="@PName">@PName </label>
+                </div>
+                Listcount++;
+                Giftlist.Add(Listvalue);
+                Priority.Add(priority);
 
-    giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = '" + Request["ChooseList"] + "'");
-    { }
-    if (((System.Collections.ObjectModel.ReadOnlyCollection<object>)giftkey).Count != 0)
-    {
-        <div class="input-field col s12">
-            <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey">
-            <label class="active" for="Giftkey">Giftkey</label>
-        </div>
-}
+            }
+            if (Giftlist.Count != 0 && Giftlist[0] != null)
+            {
+                if (Giftlist.Last<string>() != "" && Numberlist != null)
+                {
+                    db.Execute("insert INTO Gifts(Gift, GiftKey, Priority, Creator_Name, Creators_ListID) VALUES('', '1', '', '" + Creator_Name + "', ' " + Numberlist + "')");
+                    refresh = true;
+                }
+            }
+
+            giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = '" + Numberlist + "' AND Creator_Name = '" + Creator_Name + "'");
+            { }
+            if (giftkey.Count != 0)
+            {
+                <div class="input-field col s12">
+                    <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey"  required >
+                    <label class="active" for="Giftkey">Giftkey</label>
+                </div>
+            }
+            if (Request["GiftKey"] != null) {
+                refresh = true;
+            }
         }
+
         <div class="row col s4 m4 l4">
-            <button class="btn waves-effect waves-light" type="submit" name="action">
+
+            <button class="btn waves-effect waves-light" type="submit" name="submit">
                 Submit
                 <i class="material-icons right">send</i>
 
             </button>
         </div>
     </form>
-
     <!--Side NAV for Users-->
     <ul id="slide-out" class="side-nav">
+
         <li>
             <a class="waves-effect" href="~/index.cshtml">Home <i class="material-icons">home</i></a>
         </li>
+        @{if (WebSecurity.IsAuthenticated == false)
+        {
+            <li>
+                <a class="waves-effect" href="~/Account/LoginPage.cshtml"> LogIn  </a>
+            </li>
+            <li>
+                <div class="divider"></div>
+            </li>
+            <li>
+                <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
+            </li>
+            }
+            else
+            {
         <li>
-            <a class="waves-effect" href="~/LoginPage.cshtml"> LogIn  </a>
+            <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
         </li>
-        <li>
-            <div class="divider"></div>
-        </li>
-        <li>
-            <a class="waves-effect" href="~/SignIn.cshtml">Signin</a>
-        </li>
+
+            }
+        }
     </ul>
+          
 
-
+    
 
     <!--C#-->
     @{
-
-
+        AddGift = "";
         Session["GiftList"] = Giftlist;
         Session["SPriority"] = Priority;
-        Session["NumberList"] = Request["ChooseList"];
+        Session["GiftKey"] = giftkey;
+       
+        if (Request["ChooseList"] != null)
+        {
 
-    }
+            Session["NumberList"] = Request["ChooseList"]; ;
+            //string test = Request["ChooseList"];
+            //Clist = Session["NumberList"] as string;
+        }
+        else
+        {
+
+            Session["NumberList"] = Numberlist;
+        }
+
+        if (Request["Newlist"] != null)
+        {
+            Session["NumberList"] = Newlist;
+            refresh = true;
+        }
+        if (refresh == true)
+        {
+            Response.Redirect("~/Members/AccountPage");
+        }
+
+        }
 
     <!--Scripts-->
     <script>
@@ -280,7 +352,7 @@
         $(".button-collapse").sideNav();
         // initialize select dropdown
         $(document).ready(function () {
-            $('select').material_select();
+        $('select').material_select();
         });
 
     </script>

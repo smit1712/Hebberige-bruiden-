@@ -1,0 +1,144 @@
+﻿@using WebMatrix.WebData;
+@{
+
+
+    if (IsPost)
+    {
+        AntiForgery.Validate();
+        var UserName = Request["Loginname"];
+        var Password = Request["password"];
+        Validation.RequireFields("Loginname", "password");
+        Validation.Add("Password", Validator.StringLength(16, 6));
+        Validation.Add("Loginname", Validator.Regex(@"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*", "Your username should be an email address"));
+        var returnurl = Request["returnurl"];
+        if (returnurl.IsEmpty())
+        {
+            returnurl = Href("~/Members/AccountPage");
+        }
+
+        if (Validation.IsValid())
+        {
+            if (WebSecurity.UserExists(UserName) && WebSecurity.GetPasswordFailuresSinceLastSuccess(UserName) >= 4 && WebSecurity.GetLastPasswordFailureDate(UserName).AddMinutes(2) > DateTime.UtcNow)
+            {
+                Response.Redirect("~/account/AccountLockedOut");
+            }
+            if (WebSecurity.IsConfirmed(UserName))
+            {
+                if (WebSecurity.Login(UserName, Password))
+                {
+                    Context.RedirectLocal(returnurl);
+                }
+                else
+                {
+                    Validation.AddFormError("Incorrect username or password");
+                }
+            }
+            else
+            {
+                Validation.AddFormError("User does not exist or account is not confirmed");
+            }
+        }
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Login Page</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="utf-8" />
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="~/materialize.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="~/js/materialize.js"></script>
+
+
+</head>
+<body>
+
+    <!--Navigatie header-->
+    <nav>
+        <div class="nav-wrapper red">
+            <a href="~/index.cshtml" class="brand-logo right">GiftTool!</a>
+            <ul id="nav-mobile" class="left">
+                <li><a href="#">LogIn</a></li>
+            </ul>
+        </div>
+    </nav> <!-- SideNav Button-->
+    <div class=" row">
+        <div class=" col s1 m1 l1">
+            <ul>
+                <li><a href="#" data-activates="slide-out" class="button-collapse waves-effect"><i class="material-icons">menu</i> </a></li>
+            </ul>
+        </div>
+    </div>
+    <!-- Page Layout here -->
+    <!--Login Form-->
+
+    <div class="row">
+        <form method="post">
+            @AntiForgery.GetHtml()
+            @Html.ValidationSummary(true)
+            <div class="row">
+                <div class="input-field col l6 m6 s12">
+                    <input id="Loginname" type="text" class="validate" name="Loginname">
+                    <label for="Loginname">Loginname</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col l6 m6 s12">
+                    <input id="password" type="password" class="validate" name="password">
+                    <label for="password">Password</label>
+                </div>
+            </div>
+
+            <button class="btn waves-effect waves-light red " type="submit" name="action">
+                Login
+
+                <i class="material-icons login"></i>
+
+
+            </button>
+        </form>
+    </div>
+
+    <!--Side NAV for Users-->
+    <ul id="slide-out" class="side-nav">
+        <li>
+            <a class="waves-effect" href="~/index.cshtml">Home <i class="material-icons">home</i></a>
+        </li> @{if (WebSecurity.IsAuthenticated == false)
+        {
+            <li>
+                <div class="divider"></div>
+            </li>
+            <li>
+                <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
+            </li>
+       }
+       else
+               {
+        <li>
+            <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
+        </li>
+
+                }
+        }
+        <li>
+            <a class="waves-effect" href="~/Members/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
+        </li>
+
+        <!--Scripts-->
+        <script>
+            // Initialize collapse button
+            $(".button-collapse").sideNav();
+        </script>
+
+
+
+</body>
+</html>

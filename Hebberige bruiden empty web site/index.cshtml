@@ -1,5 +1,5 @@
 ﻿@using WebMatrix.Data;
-
+@using WebMatrix.WebData;
 @{
 
     // c# Database code
@@ -11,13 +11,13 @@
     string key = Request["GiftKeyname"];
     if (key == null)
     {
-        key = null; 
+        key = null;
 
-        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '0'");
+        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '0' Order by Priority");
     }
     else
     {
-        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '" + key + "'");
+        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '" + key + "'Order by Priority");
     }
 
     // choose gift code
@@ -29,18 +29,23 @@
     RemoveGiftkeyQuery = db.Query("SELECT GiftKey from Gifts where GiftKey = '" + key + "'");
     SelectedGift = Request["ChooseGift"];
 
-    foreach (dynamic row in db.Query("SELECT Gift From Gifts WHERE Gift = '" + SelectedGift + "'  "))
+    foreach (dynamic row in db.Query("SELECT Gift From Gifts "))
     {
-        if (RemoveGiftQuery[count].Gift == SelectedGift && RemoveGiftkeyQuery[count].GiftKey == key)
+        if (RemoveGiftQuery.Count != 0 && SelectedGift != null)
         {
+            if (RemoveGiftQuery[count].Gift == SelectedGift && RemoveGiftkeyQuery[count].GiftKey == key)
+            {
 
-            db.Execute("DELETE FROM Gifts where Gift = '" + SelectedGift + "' AND Giftkey = '" + key + "'");
-            break;
+                db.Execute("DELETE FROM Gifts where Gift = '" + SelectedGift + "' AND Giftkey = '" + key + "'");
+
+                Response.Redirect("~/index");
+                break;
+            }
+            count++;
         }
-        count++;
     }
 
-    }
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,7 +85,7 @@
     </div>
     <!--GiftKey-->
     <form method="post">
-        <div class="row">
+        <div class="row center-align">
             <div class="col s5 m5 l5">
 
                 <div class="input-field">
@@ -88,7 +93,7 @@
                     <label for="CollectioniD"> GiftKey</label>
                 </div>
 
-                <div class=" col s1 m1 l1">
+                <div class=" col s1 m1 l1 center-align">
                     <button class="btn waves-effect waves-light" type="submit" name="action">
                         Submit
                         <i class="material-icons right">send</i>
@@ -99,15 +104,22 @@
             </div>
         </div>
         <!--Name&Gift-->
-        <div class="row">
+        <div class="row center-align">
             <div class="col s5 m5 l5 ">
                 <div class=" input-field col s10 m10 l10">
                     <select name="ChooseGift">
                         <option value="" disabled selected></option>
                         @{ int Giftcount = 0;
-                        foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = '" + key + "'"))
-                        {<option value="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</option>
-                                Giftcount++;}}                        
+                            if (SelectGiftQuery.Count != 0)
+                            {
+                                foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = '" + key + "'"))
+                                {
+                                <option value="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</option>
+                                    Giftcount++;
+                                }
+                            }
+                            }
+                        
                     </select>
                     <label>Choose your Gift</label>
                 </div>
@@ -118,14 +130,21 @@
             </div>
         </div>
     </form>
+
     <!-- GiftList-->
-    <div class="row">
+    <div class="row center-align">
         <div class=" col s5 m5 l5">
-            <ul class="collection">                
+            <ul class="collection">
                 @{Giftcount = 0;
-                        foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = '" + key + "'"))                        {
-                        <li class="collection-item waves-effect"><a href="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</a></li>
-                        Giftcount++;}}
+                    if (key != null && SelectedGift == null)
+                    {
+                        foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = '" + key + "' ORDER BY Priority asc"))
+                        {
+                            <li class="collection-item waves-effect"><a href="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</a></li>
+                            Giftcount++;
+                        }
+                    }
+                }
             </ul>
         </div>
     </div>
@@ -135,19 +154,36 @@
 
     <!--Side NAV for Users-->
     <ul id="slide-out" class="side-nav">
+        @{if (WebSecurity.IsAuthenticated == false)
+        {
+            <li>
+                <a class="waves-effect" href="~/Account/LoginPage.cshtml"> LogIn  </a>
+            </li>
+            <li>
+                <div class="divider"></div>
+            </li>
+            <li>
+                <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
+            </li>
+    }
+             else
+                 {
+                    <li>
+                        <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
+                    </li>
+
+                     }  
+         }
         <li>
-            <a class="waves-effect" href="~/LoginPage.cshtml"> LogIn  </a>
-        </li>
-        <li>
-            <div class="divider"></div>
-        </li>
-        <li>
-            <a class="waves-effect" href="~/SignIn.cshtml">Signin</a>
-        </li>
-        <li>
-            <a class="waves-effect" href="~/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
+            <a class="waves-effect" href="~/Members/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
         </li>
     </ul>
+
+    @{ if (Request["ChooseGift"] != null)
+        {
+            Response.Redirect("~/index.cshtml");
+        }
+    }
 
     <!--Scripts-->
     <script>

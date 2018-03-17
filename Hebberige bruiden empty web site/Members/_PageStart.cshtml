@@ -1,0 +1,15 @@
+﻿@using WebMatrix.WebData;
+@{
+    Database db2 = Database.Open("Membershipdb");
+    if (WebSecurity.Initialized == false)
+    {
+        WebSecurity.InitializeDatabaseConnection("Membershipdb", "Users", "UserId", "UserName", true);
+    }
+    WebSecurity.RequireAuthenticatedUser();
+
+
+
+
+
+
+}
