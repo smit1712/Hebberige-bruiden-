@@ -15,35 +15,11 @@
     Boolean refresh = false;
     var Creator_Name = WebSecurity.CurrentUserName;
     string Numberlist = Request["ChooseList"];
-    if (Request["ChooseList"] != null)
-    {
-        Clist = Request["ChooseList"];
-    }
-    else
-    {
-        Clist = Session["NumberList"] as string;
-    }
-    dynamic giftkey = null;
-    if (Session["NumberList"] as string != @Request["ChooseList"] && Session["Numberlist"] != null)
-    {
-        Numberlist = @Request["ChooseList"];
-        Clist = Session["NumberList"] as string;
-        //giftkey = Session["Giftkey"];
-    }
-    else
-    {
-        Clist = Session["NumberList"] as string;
-    }
-    if (Session["NumberList"] != null) { Clist = Session["NumberList"] as string; }
-
     int priority = 0;
     string strpriority = null;
     string CountList = null;
     dynamic Listvalue = null;
     string AddGift = "dont";
-
-
-
 
     dynamic Newlist = null;
     Newlist = Request["Newlist"];
@@ -52,25 +28,53 @@
     List<string> oldgiftlist = new List<string>();
     List<int> Priority = new List<int>();
     string test = null;
+    dynamic giftkey = null;
 
     oldgiftlist = Session["GiftList"] as List<string>;
 
+    List<string> alteredlist = new List<string>();
+    int count = 0;
 
+    dynamic SelectListQueury = null;
+    SelectListQueury = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name=@0 group by Creators_ListID", Creator_Name);
 
+    // als de form chooselist niet ingevuld is, wordt de session gebruikt voor clist(chooselist)
+    if (Request["ChooseList"] != null)
+    {
+        Clist = Request["ChooseList"];
+    }
+    else
+    {
+        Clist = Session["NumberList"] as string;
+    }
+    // als de sessie numberlist niet hetzelfde is als chooselist en hij is niet leeg dan is numberlist wat ingevuld is bij chooselist en clist de sessie
+    if (Session["NumberList"] as string != @Request["ChooseList"] && Session["Numberlist"] != null)
+    {
+        Numberlist = @Request["ChooseList"];
+        Clist = Session["NumberList"] as string;
+        //giftkey = Session["Giftkey"];
+    }// anders is allees clist hetzelfde als de sessie numberlist
+    else
+    {
+        Clist = Session["NumberList"] as string;
+    }
 
+    // als de sessie numberlist leeg is, dan moet numberlist gevuld worden door de form chooselist
     if (Session["NumberList"] as string == null)
     {
         Numberlist = Request["ChooseList"];
     }
+    // anders is numberlist hetzelfde als de sessie numberlist, hierna wordt de sessie numerlist leeg gemaakt.
     else
     {
-        test = Session["NumberList"] as string;
-        Numberlist = test;
+        Numberlist = Session["NumberList"] as string;
+
     }
     Session["NumberList"] = null;
+    // als de form newlist ingevuld is, en deze waarde staat nog niet in de db als Creators_ListID dan wordt een lege gift in die lijst aangemaakt.
     if (Newlist != null)
     {
-        foreach (dynamic row in db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name= @0 group by Creators_ListID", Creator_Name))
+        foreach (dynamic row in SelectListQueury)
         {
             int Liststring = row.Creators_Listid;
             if (Liststring.ToString() == Newlist)
@@ -93,24 +97,20 @@
     dynamic giftrequest = null;
     int listcount = 0;
 
-
-    dynamic SelectListQueury = null;
-    SelectListQueury = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name=@0 group by Creators_ListID", Creator_Name);
-
-
+    // als de form Giftkey ingevuld is, dan is de variable giftkey de waarde in die form
     if (Request["Giftkey"] != null)
     {
         giftkey = Request["GiftKey"];
-    } else
+    }// anders wordt giftkey uit de database gehaald
+    else
     {
         if (Giftquery.Count != 0)
         {
             giftkey = Giftquery[0].giftkey;
         }
     }
-    List<string> alteredlist = new List<string>();
-    int count = 0;
 
+    // als oldgift list een waarde heeft en de eerst gift ingevuld is, dan worden de lijsten oldgiftlist en alterdlist vergeleken, en aangepast in de database
     if (oldgiftlist != null && Request["Gift" + count] != null)
     {
         foreach (dynamic row in oldgiftlist)
@@ -132,7 +132,7 @@
 
     }
 
-
+    // als er geen lijst is van de gebruiker(bij een nieuwegebruiker) dan wordt er een lege gift voor die gebruiker aangemaakt, met als newlist 1
     if (SelectListQueury.Count == 0)
     {
         Newlist = 1;
@@ -149,19 +149,21 @@
     @RenderPage("~/Shared/_Header.cshtml")
 
     <!-- Page Layout here -->
+    <!-- de dropdown menu/form wordt aangemaakt, in deze dropdown staan de verschillende lijsten van de gebruiker-->
     <div class="row">
         <div class=" col s5 m5 l5">
             <form method="post">
+                   @AntiForgery.GetHtml()
                 <div class="row">
                     <div class=" input-field col s10 m10 l10">
                         <select name="ChooseList">
                             <option value="@Numberlist" selected>@Numberlist  </option>
                             @{ int Giftcount = 0;
-                                dynamic uniqueListID = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name= @0 group by Creators_ListID", Creator_Name);
                                 if (SelectListQueury.Count != 0)
                                 {
-                                    foreach (dynamic row in uniqueListID)
+                                    foreach (dynamic row in SelectListQueury)
                                     {
+                                        
                                         int CountListint = SelectListQueury[Giftcount].Creators_ListID;
                                         CountList = CountListint.ToString();
                                         <option value="@CountList"> @CountList </option>
@@ -184,7 +186,9 @@
                 </div>
             </form>
         </div>
+        <!--de form newlist wordt gemaakt, als deze wordt ingevuld wordt er een nieuwe lijst gemaakt voor de gebruiker-->
         <form method="post">
+            @AntiForgery.GetHtml()
             <div class=" = col s6 m6 l6">
                 <div class=" input-field">
                     <input name="Newlist" id="Newlist" type="text" class="validate" value="@Newlist" />
@@ -200,73 +204,76 @@
 
 
     <form method="post">
+        @AntiForgery.GetHtml()
         @{
+        // per gift in de lijst wordt er een form aangemaakt, hier kan de gift worden aangepast, de prioriteit worden veranderd
+        // wanneer de lijst wordt submit, en de laatste waarde is niet leeg, dan wordt er een nieuwe lege form gemaakt.
+        int Listcount = 0;
 
-            int Listcount = 0;
+        foreach (dynamic row in Giftquery)
+        {
+            String Name = "Gift" + Listcount;
+            string PName = "Priority Gift" + Listcount;
 
-            foreach (dynamic row in Giftquery)
+            if (alteredlist.Count == 0)
             {
-                String Name = "Gift" + Listcount;
-                string PName = "Priority Gift" + Listcount;
-
-                if (alteredlist.Count == 0)
-                {
-                    Listvalue = Giftquery[Listcount].Gift;
-                    priority = Giftquery[Listcount].Priority;
-                }
-                else
-                {
-                    Listvalue = Giftquery[Listcount].Gift;
-                    priority = Giftquery[Listcount].Priority;
-
-                }
-                <div class="input-field col s6">
-                    <input value="@Listvalue" id="@Name" type="text" class="validate" name="@Name">
-                    <label class="active" for="@Name">@Name </label>
-                </div>
-                <div class="input-field col s6">
-                    <input value="@priority" id="@PName" type="number" class="validate" name="@PName">
-                    <label class="active" for="@PName">@PName </label>
-                </div>
-                Listcount++;
-                Giftlist.Add(Listvalue);
-                Priority.Add(priority);
+                Listvalue = Giftquery[Listcount].Gift;
+                priority = Giftquery[Listcount].Priority;
+            }
+            else
+            {
+                Listvalue = Giftquery[Listcount].Gift;
+                priority = Giftquery[Listcount].Priority;
 
             }
-            if (Giftlist.Count != 0 && Giftlist[0] != null)
-            {
-                if (Giftlist.Last<string>() != "")
-                {
-                    db.Execute("insert INTO Gifts(Gift, GiftKey, Priority, Creator_Name, Creators_ListID) VALUES('', @0, '5000', @1, @2)", giftkey, Creator_Name, Numberlist);
-                    refresh = true;
-                }
-            }
+        <div class="row s12 m12 l12">
+            <div class="input-field col s5 m5 l5">
+                <input value="@Listvalue" id="@Name" type="text" class="validate" name="@Name">
+                <label class="active" for="@Name">@Name </label>
+            </div>
+            <div class="container s1 m1 l1"></div>
+            <div class="input-field col s6 m6 l6">
+                <input value="@priority" id="@PName" type="number" class="validate" name="@PName">
+                <label class="active" for="@PName">@PName </label>
+            </div>
+        </div>
+        Listcount++;
+        Giftlist.Add(Listvalue);
+        Priority.Add(priority);
 
-            giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = @0 AND Creator_Name = @1", Numberlist, Creator_Name);
-            { }
-            if (giftkey.Count != 0)
-            {
-                <div class="input-field col s12">
-                    <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey" required>
-                    <label class="active" for="Giftkey">Giftkey</label>
-                </div>
-            }
-            if (Request["GiftKey"] != null)
-            {
-                refresh = true;
-            }
+    }
+    if (Giftlist.Count != 0 && Giftlist[0] != null)
+    {
+        if (Giftlist.Last<string>() != "")
+        {
+            db.Execute("insert INTO Gifts(Gift, GiftKey, Priority, Creator_Name, Creators_ListID) VALUES('', @0, @1, @2, @3)", giftkey,priority+1, Creator_Name, Numberlist);
+            refresh = true;
         }
-
+    }
+    // hier kan je de giftkey van de lijst veranderen.   Deze veranderd de giftkey van alle gifts in de lijst
+    giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = @0 AND Creator_Name = @1", Numberlist, Creator_Name);
+    { }
+    if (giftkey.Count != 0)
+    {
+        <div class="input-field col s12">
+            <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey" required>
+            <label class="active" for="Giftkey">Giftkey</label>
+        </div>
+}
+if (Request["GiftKey"] != null)
+{
+    refresh = true;
+}
+        }
         <div class="row col s4 m4 l4">
-
             <button class="btn waves-effect waves-light" type="submit" name="submit">
                 Submit
                 <i class="material-icons right">send</i>
-
             </button>
         </div>
     </form>
     <!--Side NAV for Users-->
+    <!--authentiseerde gebruikers hebben andere opties dan normale gebruikers-->
     <ul id="slide-out" class="side-nav">
 
         <li>
@@ -299,6 +306,7 @@
 
     <!--C#-->
     @{
+        // hier worden de sessies gemaakt, deze zijn nodig om na een submit/refresh de forms weer correct te vullen
         AddGift = "";
         Session["GiftList"] = Giftlist;
         Session["SPriority"] = Priority;
