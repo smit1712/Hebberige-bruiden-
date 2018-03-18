@@ -20,6 +20,8 @@
     string CountList = null;
     dynamic Listvalue = null;
     string AddGift = "dont";
+    bool Bought = false;
+    string color = "";
 
     dynamic Newlist = null;
     Newlist = Request["Newlist"];
@@ -90,7 +92,7 @@
         }
         if (insertlist == true)
         {
-            db.Execute("insert INTO Gifts (Gift,GiftKey,Priority,Creator_Name,Creators_ListID) VALUES('','1','1',@0,@1)", Creator_Name, Newlist);
+            db.Execute("insert INTO Gifts (Gift,GiftKey,Priority,Creator_Name,Creators_ListID,Bought) VALUES('','1','1',@0,@1,0)", Creator_Name, Newlist);
         }
     }
     dynamic Giftquery = db.Query("Select * from Gifts where Creators_ListID = @0 AND Creator_Name = @1", Numberlist, Creator_Name);
@@ -153,7 +155,7 @@
     <div class="row">
         <div class=" col s5 m5 l5">
             <form method="post">
-                   @AntiForgery.GetHtml()
+                @AntiForgery.GetHtml()
                 <div class="row">
                     <div class=" input-field col s10 m10 l10">
                         <select name="ChooseList">
@@ -163,7 +165,7 @@
                                 {
                                     foreach (dynamic row in SelectListQueury)
                                     {
-                                        
+
                                         int CountListint = SelectListQueury[Giftcount].Creators_ListID;
                                         CountList = CountListint.ToString();
                                         <option value="@CountList"> @CountList </option>
@@ -191,7 +193,7 @@
             @AntiForgery.GetHtml()
             <div class=" = col s6 m6 l6">
                 <div class=" input-field">
-                    <input name="Newlist" id="Newlist" type="text" class="validate" value="@Newlist" />
+                    <input name="Newlist" id="Newlist" type="number" class="validate" value="@Newlist" />
                     <label for="Newlist">New list</label>
                 </div>
                 <button class="btn waves-effect waves-light" type="submit" name="action">
@@ -206,64 +208,76 @@
     <form method="post">
         @AntiForgery.GetHtml()
         @{
-        // per gift in de lijst wordt er een form aangemaakt, hier kan de gift worden aangepast, de prioriteit worden veranderd
-        // wanneer de lijst wordt submit, en de laatste waarde is niet leeg, dan wordt er een nieuwe lege form gemaakt.
-        int Listcount = 0;
+            // per gift in de lijst wordt er een form aangemaakt, hier kan de gift worden aangepast, de prioriteit worden veranderd
+            // wanneer de lijst wordt submit, en de laatste waarde is niet leeg, dan wordt er een nieuwe lege form gemaakt.
+            // Als de gift gekocht is wordt hij ipv blauw, groen.
+            int Listcount = 0;
 
-        foreach (dynamic row in Giftquery)
-        {
-            String Name = "Gift" + Listcount;
-            string PName = "Priority Gift" + Listcount;
-
-            if (alteredlist.Count == 0)
+            foreach (dynamic row in Giftquery)
             {
-                Listvalue = Giftquery[Listcount].Gift;
-                priority = Giftquery[Listcount].Priority;
+                String Name = "Gift" + Listcount;
+                string PName = "Priority Gift" + Listcount;
+
+                if (alteredlist.Count == 0)
+                {
+                    Listvalue = Giftquery[Listcount].Gift;
+                    priority = Giftquery[Listcount].Priority;
+                    Bought = Giftquery[Listcount].Bought;
+
+                }
+                else
+                {
+                    Listvalue = Giftquery[Listcount].Gift;
+                    priority = Giftquery[Listcount].Priority;
+                    Bought = Giftquery[Listcount].Bought;
+
+                }
+                if(Bought == true)
+                {
+                     color = "green";
+                }
+                else
+                {
+                     color = "blue";
+                }
+                <div class="row s12 m12 l12">
+                    <div class="input-field col s5 m5 l5 @color">
+                        <input value="@Listvalue" id="@Name" type="text" class="validate" name="@Name">
+                        <label class="active" for="@Name">@Name </label>
+                    </div>
+                    <div class="container s1 m1 l1 @color"></div>
+                    <div class="input-field col s6 m6 l6">
+                        <input value="@priority" id="@PName" type="number" class="validate" name="@PName">
+                        <label class="active" for="@PName">@PName </label>
+                    </div>
+                </div>
+                Listcount++;
+                Giftlist.Add(Listvalue);
+                Priority.Add(priority);
+
             }
-            else
+            if (Giftlist.Count != 0 && Giftlist[0] != null)
             {
-                Listvalue = Giftquery[Listcount].Gift;
-                priority = Giftquery[Listcount].Priority;
-
+                if (Giftlist.Last<string>() != "")
+                {
+                    db.Execute("insert INTO Gifts(Gift, GiftKey, Priority, Creator_Name, Creators_ListID) VALUES('', @0, @1, @2, @3)", giftkey, priority + 1, Creator_Name, Numberlist);
+                    refresh = true;
+                }
             }
-        <div class="row s12 m12 l12">
-            <div class="input-field col s5 m5 l5">
-                <input value="@Listvalue" id="@Name" type="text" class="validate" name="@Name">
-                <label class="active" for="@Name">@Name </label>
-            </div>
-            <div class="container s1 m1 l1"></div>
-            <div class="input-field col s6 m6 l6">
-                <input value="@priority" id="@PName" type="number" class="validate" name="@PName">
-                <label class="active" for="@PName">@PName </label>
-            </div>
-        </div>
-        Listcount++;
-        Giftlist.Add(Listvalue);
-        Priority.Add(priority);
-
-    }
-    if (Giftlist.Count != 0 && Giftlist[0] != null)
-    {
-        if (Giftlist.Last<string>() != "")
-        {
-            db.Execute("insert INTO Gifts(Gift, GiftKey, Priority, Creator_Name, Creators_ListID) VALUES('', @0, @1, @2, @3)", giftkey,priority+1, Creator_Name, Numberlist);
-            refresh = true;
-        }
-    }
-    // hier kan je de giftkey van de lijst veranderen.   Deze veranderd de giftkey van alle gifts in de lijst
-    giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = @0 AND Creator_Name = @1", Numberlist, Creator_Name);
-    { }
-    if (giftkey.Count != 0)
-    {
-        <div class="input-field col s12">
-            <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey" required>
-            <label class="active" for="Giftkey">Giftkey</label>
-        </div>
-}
-if (Request["GiftKey"] != null)
-{
-    refresh = true;
-}
+            // hier kan je de giftkey van de lijst veranderen.   Deze veranderd de giftkey van alle gifts in de lijst
+            giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = @0 AND Creator_Name = @1", Numberlist, Creator_Name);
+            { }
+            if (giftkey.Count != 0)
+            {
+                <div class="input-field col s12">
+                    <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey" required>
+                    <label class="active" for="Giftkey">Giftkey</label>
+                </div>
+            }
+            if (Request["GiftKey"] != null)
+            {
+                refresh = true;
+            }
         }
         <div class="row col s4 m4 l4">
             <button class="btn waves-effect waves-light" type="submit" name="submit">
@@ -337,16 +351,9 @@ if (Request["GiftKey"] != null)
 
     }
 
-    <!--Scripts-->
-    <script>
-        // Initialize collapse button
-        $(".button-collapse").sideNav();
-        // initialize select dropdown
-        $(document).ready(function () {
-            $('select').material_select();
-        });
+    @RenderPage("~/Shared/_Footer.cshtml")
 
-    </script>
+
 </body>
 
 </html>

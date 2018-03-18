@@ -80,15 +80,15 @@
         <li>
             <a class="waves-effect" href="~/index.cshtml">Home <i class="material-icons">home</i></a>
         </li> @{if (WebSecurity.IsAuthenticated == false)
-        {
-            <li>
-                <div class="divider"></div>
-            </li>
-            <li>
-                <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
-            </li>
-        }
-        else
+            {
+                <li>
+                    <div class="divider"></div>
+                </li>
+                <li>
+                    <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
+                </li>
+            }
+            else
             {
                 <li>
                     <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
@@ -101,11 +101,7 @@
         }
     </ul>
 
-    <!--Scripts-->
-    <script>
-        // Initialize collapse button
-        $(".button-collapse").sideNav();
-    </script>
+    @RenderPage("~/Shared/_Footer.cshtml")
 
 
 

@@ -9,6 +9,8 @@
     //Input giftkey code:
     //Kijkt of de form GiftKeyname ingevuld is, zoja dan maakt hij selectGiftQuery gebruikbaar
     dynamic SelectGiftQuery = null;
+    int Giftcount = 0;
+
     string hidden = null;
     if (Request["GiftKeyname"] == null)
     {
@@ -17,14 +19,13 @@
     string key = Request["GiftKeyname"];
     if (key == null)
     {
-
-
-        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '0' Order by Priority");
+        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '0' AND Bought = 'False' Order by Priority");
     }
     else
     {
-        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = @0 Order by Priority asc", key);
+        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = @0 AND Bought = 'False' Order by Priority asc", key);
     }
+    
 
     // choose gift code
     // kijkt of er een gift geselecteerd is en deze bij de ingevoerde key hoord. Als dit zo is wordt de gift uit de database gehaald.
@@ -40,7 +41,7 @@
             if (RemoveGiftQuery[count].Gift == SelectedGift && RemoveGiftkeyQuery[count].GiftKey == key)
             {
 
-                db.Execute("DELETE FROM Gifts where Gift = @0 AND Giftkey = @1", SelectedGift, key);
+                db.Execute("Update Gifts set Bought = 'True' where Gift = @0 AND Giftkey = @1", SelectedGift, key);
 
                 Response.Redirect("~/index");
                 break;
@@ -71,6 +72,30 @@
                 </div>
             </div>
         </div>
+        <!-- GiftList-->
+        <!--Als de giftkey ingevoerd is worden alle gifts weer gegeven van die lijst, gesorteerd op prioriteit.  -->
+        <div class="row center-align">
+            <div class=" col s5 m5 l5">
+                <ul class="collection">
+                    @{
+                        Giftcount = 0;
+                        if (key != null && SelectedGift == null)
+                        {
+                            foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = @0 AND Bought = 'False' ORDER BY Priority asc", key))
+                            {
+                                if (SelectGiftQuery[Giftcount].Gift != "")
+                                {
+
+                                <li class="collection-item waves-effect">Gift @(Giftcount + 1)  :@SelectGiftQuery[Giftcount].Gift</li>
+
+                                }
+                        Giftcount++;
+                             }
+                         }
+                    }
+                </ul>
+            </div>
+        </div>
         <!--Name&Gift-->
         <!--wanneer de giftkey ingevoerd is worden de bijbehoordende dropdown menu weer gegeven-->
         <div class="row center-align">
@@ -78,19 +103,20 @@
                 <div class=" input-field col s10 m10 l10 @hidden">
                     <select name="ChooseGift">
                         <option value="" disabled selected></option>
-                        @{ int Giftcount = 0;
-                        if (SelectGiftQuery.Count != 0)
-                        {
-                            foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = @0", key))
+                        @{ Giftcount = 0;
+                            if (SelectGiftQuery.Count != 0)
                             {
-                                if (SelectGiftQuery[Giftcount].Gift != "")
+                                dynamic boughtQuery = db.Query("Select Bought FROM Gifts WHERE Giftkey = @0 AND Bought = 'false'", key);
+                                foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = @0 AND Bought = 'False' ", key))
                                 {
+                                    if (SelectGiftQuery[Giftcount].Gift != "" && boughtQuery[Giftcount].Bought == false)
+                                    {
                                     <option value="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</option>
 
+                                    }
+                                    Giftcount++;
+                                }
                             }
-                            Giftcount++;
-                        }
-                    }
                         }
 
                     </select>
@@ -104,29 +130,7 @@
         </div>
     </form>
 
-    <!-- GiftList-->
-    <!--Als de giftkey ingevoerd is worden alle gifts weer gegeven van die lijst, gesorteerd op prioriteit.  -->
-    <div class="row center-align">
-        <div class=" col s5 m5 l5">
-            <ul class="collection">
-                @{Giftcount = 0;
-                    if (key != null && SelectedGift == null)
-                    {
-                        foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = @0 ORDER BY Priority asc", key))
-                        {
-                            if (SelectGiftQuery[Giftcount].Gift != "")
-                            {
 
-                                <li class="collection-item waves-effect">Gift @(Giftcount + 1)  :@SelectGiftQuery[Giftcount].Gift</li>
-
-                            }
-                            Giftcount++;
-                        }
-                    }
-                }
-            </ul>
-        </div>
-    </div>
 
 
 
@@ -162,9 +166,11 @@
 
     @{// de pagina wordt gerefreshed als er een gift gekozen is.
         if (Request["ChooseGift"] != null)
-        {
+        {           
             Response.Redirect("~/index.cshtml");
         }
+
+
     }
 
 
