@@ -51,23 +51,26 @@
     List<string> Giftlist = new List<string>();
     List<string> oldgiftlist = new List<string>();
     List<int> Priority = new List<int>();
-
+    string test = null;
 
     oldgiftlist = Session["GiftList"] as List<string>;
 
 
-    if (Session["NumberList"] == null)
+
+
+    if (Session["NumberList"] as string == null)
     {
         Numberlist = Request["ChooseList"];
     }
     else
     {
-        Numberlist = Session["NumberList"] as string;
+        test = Session["NumberList"] as string;
+        Numberlist = test;
     }
     Session["NumberList"] = null;
     if (Newlist != null)
     {
-        foreach (dynamic row in db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='" + Creator_Name + "' group by Creators_ListID"))
+        foreach (dynamic row in db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name= @0 group by Creators_ListID", Creator_Name))
         {
             int Liststring = row.Creators_Listid;
             if (Liststring.ToString() == Newlist)
@@ -83,20 +86,27 @@
         }
         if (insertlist == true)
         {
-            db.Execute("insert INTO Gifts (Gift,GiftKey,Priority,Creator_Name,Creators_ListID) VALUES('','1','1','" + Creator_Name + "','" + Newlist + "')");
+            db.Execute("insert INTO Gifts (Gift,GiftKey,Priority,Creator_Name,Creators_ListID) VALUES('','1','1',@0,@1)", Creator_Name, Newlist);
         }
     }
-    dynamic Giftquery = db.Query("Select * from Gifts where Creators_ListID = '" + Numberlist + "' AND Creator_Name = '" + Creator_Name + "'");
+    dynamic Giftquery = db.Query("Select * from Gifts where Creators_ListID = @0 AND Creator_Name = @1", Numberlist, Creator_Name);
     dynamic giftrequest = null;
     int listcount = 0;
 
 
     dynamic SelectListQueury = null;
-    SelectListQueury = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='" + Creator_Name + "' group by Creators_ListID");
+    SelectListQueury = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name=@0 group by Creators_ListID", Creator_Name);
 
 
-    if (Request["Giftkey"] != null) {
+    if (Request["Giftkey"] != null)
+    {
         giftkey = Request["GiftKey"];
+    } else
+    {
+        if (Giftquery.Count != 0)
+        {
+            giftkey = Giftquery[0].giftkey;
+        }
     }
     List<string> alteredlist = new List<string>();
     int count = 0;
@@ -115,8 +125,7 @@
         count = 0;
         foreach (dynamic row in alteredlist)
         {
-            db.Execute("update Gifts set Gift = '" + alteredlist[count] + "' , GiftKey = '" + giftkey + "', Priority = '" + Priority[count] + "' where Gift = '" + oldgiftlist[count] + "' AND Creators_ListID = '" + Numberlist + "' AND Creator_Name = '" + Creator_Name + "' ");
-
+            db.Execute("update Gifts set Gift = @0 , GiftKey = @1, Priority = @2 where Gift = @3 AND Creators_ListID = @4 AND Creator_Name = @5 ", alteredlist[count], giftkey, Priority[count], oldgiftlist[count], Numberlist, Creator_Name);
             count++;
         }
 
@@ -124,51 +133,21 @@
     }
 
 
-    //if (false == giftkey.IsEmpty())
-    //{
-    //    db.Execute(insertQuery, Creator_Name, gift1, gift2, gift3, gift4, giftkey);
-    //    // Response.Redirect("~/AccountPage.cshtml");
-
-    //}
+    if (SelectListQueury.Count == 0)
+    {
+        Newlist = 1;
+        db.Execute("insert INTO Gifts (Gift,GiftKey,Priority,Creator_Name,Creators_ListID) VALUES('','1','1',@0,@1)", Creator_Name, Newlist);
+    }
 }
+
+
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <title>Account Page</title>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta charset="utf-8" />
-    <!--Import materialize.css-->
-    <link type="text/css" rel="stylesheet" href="~/materialize.css" />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!--Let browser know website is optimized for mobile-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!--Import jQuery before materialize.js-->
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <script type="text/javascript" src="~/js/materialize.js"></script>
 
-
-</head>
 <body>
-    <!--Navigatie header-->
-    <nav>
-        <div class="nav-wrapper red">
-            <a href="~/index.cshtml" class="brand-logo right">GiftTool!</a>
-            <ul id="nav-mobile" class="left">
-                <li><a href="#">Account</a></li>
+    <!-- Render Shared Header-->
+    @RenderPage("~/Shared/_Header.cshtml")
 
-            </ul>
-        </div>
-    </nav>
-    <!-- SideNav Button-->
-    <div class=" row">
-        <div class=" col s1 m1 l1">
-            <ul>
-                <li><a href="#" data-activates="slide-out" class="button-collapse waves-effect"><i class="material-icons">menu</i> </a></li>
-            </ul>
-        </div>
-    </div>
     <!-- Page Layout here -->
     <div class="row">
         <div class=" col s5 m5 l5">
@@ -178,20 +157,23 @@
                         <select name="ChooseList">
                             <option value="@Numberlist" selected>@Numberlist  </option>
                             @{ int Giftcount = 0;
-                                dynamic uniqueListID = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name='" + Creator_Name + "' group by Creators_ListID");
-                                foreach (dynamic row in uniqueListID)
+                                dynamic uniqueListID = db.Query("select distinct Creators_ListID, count(Creators_ListID) as CountOf from Gifts Where Creator_Name= @0 group by Creators_ListID", Creator_Name);
+                                if (SelectListQueury.Count != 0)
                                 {
-                                    int CountListint = SelectListQueury[Giftcount].Creators_ListID;
-                                    CountList = CountListint.ToString();
-                                    <option value="@CountList">@CountList</option>
-                                    Giftcount++;
+                                    foreach (dynamic row in uniqueListID)
+                                    {
+                                        int CountListint = SelectListQueury[Giftcount].Creators_ListID;
+                                        CountList = CountListint.ToString();
+                                        <option value="@CountList"> @CountList </option>
+                                        Giftcount++;
 
+                                    }
+                                    if (Request["ChooseList"] != null)
+                                    {
+                                        refresh = true;
+                                    }
                                 }
-                                if (Request["ChooseList"] != null) {
-                                    refresh = true;
-                                }
-                                }
-
+                            }
                         </select>
                         <label>Choose your GiftList</label>
                     </div>
@@ -209,8 +191,8 @@
                     <label for="Newlist">New list</label>
                 </div>
                 <button class="btn waves-effect waves-light" type="submit" name="action">
-                        Create NewList                     
-                    </button>
+                    Create NewList
+                </button>
             </div>
         </form>
     </div>
@@ -253,23 +235,24 @@
             }
             if (Giftlist.Count != 0 && Giftlist[0] != null)
             {
-                if (Giftlist.Last<string>() != "" && Numberlist != null)
+                if (Giftlist.Last<string>() != "")
                 {
-                    db.Execute("insert INTO Gifts(Gift, GiftKey, Priority, Creator_Name, Creators_ListID) VALUES('', '1', '', '" + Creator_Name + "', ' " + Numberlist + "')");
+                    db.Execute("insert INTO Gifts(Gift, GiftKey, Priority, Creator_Name, Creators_ListID) VALUES('', @0, '5000', @1, @2)", giftkey, Creator_Name, Numberlist);
                     refresh = true;
                 }
             }
 
-            giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = '" + Numberlist + "' AND Creator_Name = '" + Creator_Name + "'");
+            giftkey = db.Query("Select GiftKey from Gifts where Creators_ListID = @0 AND Creator_Name = @1", Numberlist, Creator_Name);
             { }
             if (giftkey.Count != 0)
             {
                 <div class="input-field col s12">
-                    <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey"  required >
+                    <input value="@giftkey[0].GiftKey" id="Giftkey" type="text" class="validate" name="GiftKey" required>
                     <label class="active" for="Giftkey">Giftkey</label>
                 </div>
             }
-            if (Request["GiftKey"] != null) {
+            if (Request["GiftKey"] != null)
+            {
                 refresh = true;
             }
         }
@@ -290,29 +273,29 @@
             <a class="waves-effect" href="~/index.cshtml">Home <i class="material-icons">home</i></a>
         </li>
         @{if (WebSecurity.IsAuthenticated == false)
-        {
-            <li>
-                <a class="waves-effect" href="~/Account/LoginPage.cshtml"> LogIn  </a>
-            </li>
-            <li>
-                <div class="divider"></div>
-            </li>
-            <li>
-                <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
-            </li>
+            {
+                <li>
+                    <a class="waves-effect" href="~/Account/LoginPage.cshtml"> LogIn  </a>
+                </li>
+                <li>
+                    <div class="divider"></div>
+                </li>
+                <li>
+                    <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
+                </li>
             }
             else
             {
-        <li>
-            <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
-        </li>
+                <li>
+                    <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
+                </li>
 
             }
         }
     </ul>
-          
 
-    
+
+
 
     <!--C#-->
     @{
@@ -320,7 +303,7 @@
         Session["GiftList"] = Giftlist;
         Session["SPriority"] = Priority;
         Session["GiftKey"] = giftkey;
-       
+
         if (Request["ChooseList"] != null)
         {
 
@@ -344,7 +327,7 @@
             Response.Redirect("~/Members/AccountPage");
         }
 
-        }
+    }
 
     <!--Scripts-->
     <script>
@@ -352,7 +335,7 @@
         $(".button-collapse").sideNav();
         // initialize select dropdown
         $(document).ready(function () {
-        $('select').material_select();
+            $('select').material_select();
         });
 
     </script>

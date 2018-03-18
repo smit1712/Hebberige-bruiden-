@@ -17,16 +17,14 @@
     }
     else
     {
-        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '" + key + "'Order by Priority");
+        SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = @0 Order by Priority asc", key);
     }
 
     // choose gift code
     int count = 0;
     string SelectedGift = null;
-    dynamic RemoveGiftQuery = null;
-    dynamic RemoveGiftkeyQuery = null;
-    RemoveGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '" + key + "'");
-    RemoveGiftkeyQuery = db.Query("SELECT GiftKey from Gifts where GiftKey = '" + key + "'");
+    dynamic RemoveGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey =@0", key);
+    dynamic RemoveGiftkeyQuery = db.Query("SELECT GiftKey from Gifts where GiftKey = @0", key);
     SelectedGift = Request["ChooseGift"];
 
     foreach (dynamic row in db.Query("SELECT Gift From Gifts "))
@@ -36,7 +34,7 @@
             if (RemoveGiftQuery[count].Gift == SelectedGift && RemoveGiftkeyQuery[count].GiftKey == key)
             {
 
-                db.Execute("DELETE FROM Gifts where Gift = '" + SelectedGift + "' AND Giftkey = '" + key + "'");
+                db.Execute("DELETE FROM Gifts where Gift = @0 AND Giftkey = @1", SelectedGift, key);
 
                 Response.Redirect("~/index");
                 break;
@@ -48,41 +46,13 @@
 }
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <title>GiftTool</title>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta charset="utf-8" />
-    <!--Import materialize.css-->
-    <link type="text/css" rel="stylesheet" href="~/materialize.css" />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!--Let browser know website is optimized for mobile-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-</head>
-<body>
-    <!--Import jQuery before materialize.js-->
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <script type="text/javascript" src="js/materialize.js"></script>
 
-    <!--Navigatie header-->
-    <nav>
-        <div class="nav-wrapper red">
-            <a href="~/index.cshtml" class="brand-logo right">GiftTool!</a>
-            <ul id="nav-mobile" class="left">
-                <li><a href="#">Home</a></li>
-            </ul>
-        </div>
-    </nav>
-    <!-- Page Layout here -->
-    <!-- SideNav Button-->
-    <div class=" row">
-        <div class=" col s1 m1 l1">
-            <ul>
-                <li><a href="#" data-activates="slide-out" class="button-collapse waves-effect"><i class="material-icons">menu</i> </a></li>
-            </ul>
-        </div>
-    </div>
+<body>
+
+
+    <!-- Render Shared Header-->
+    @RenderPage("~/Shared/_Header.cshtml")
+
     <!--GiftKey-->
     <form method="post">
         <div class="row center-align">
@@ -112,14 +82,18 @@
                         @{ int Giftcount = 0;
                             if (SelectGiftQuery.Count != 0)
                             {
-                                foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = '" + key + "'"))
+                                foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = @0", key))
                                 {
-                                <option value="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</option>
+                                    if (SelectGiftQuery[Giftcount].Gift != "")
+                                    {
+                                        <option value="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</option>
+
+                                    }
                                     Giftcount++;
                                 }
                             }
-                            }
-                        
+                        }
+
                     </select>
                     <label>Choose your Gift</label>
                 </div>
@@ -138,9 +112,14 @@
                 @{Giftcount = 0;
                     if (key != null && SelectedGift == null)
                     {
-                        foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = '" + key + "' ORDER BY Priority asc"))
+                        foreach (dynamic row in db.Query("SELECT * FROM Gifts WHERE Giftkey = @0 ORDER BY Priority asc", key))
                         {
-                            <li class="collection-item waves-effect"><a href="@SelectGiftQuery[Giftcount].Gift">@SelectGiftQuery[Giftcount].Gift</a></li>
+                            if (SelectGiftQuery[Giftcount].Gift != "")
+                            {
+
+                                <li class="collection-item waves-effect">Gift @(Giftcount + 1)  :@SelectGiftQuery[Giftcount].Gift</li>
+
+                            }
                             Giftcount++;
                         }
                     }
@@ -155,28 +134,29 @@
     <!--Side NAV for Users-->
     <ul id="slide-out" class="side-nav">
         @{if (WebSecurity.IsAuthenticated == false)
-        {
-            <li>
-                <a class="waves-effect" href="~/Account/LoginPage.cshtml"> LogIn  </a>
-            </li>
-            <li>
-                <div class="divider"></div>
-            </li>
-            <li>
-                <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
-            </li>
-    }
-             else
-                 {
-                    <li>
-                        <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
-                    </li>
+            {
+                <li>
+                    <a class="waves-effect" href="~/Account/LoginPage.cshtml"> LogIn  </a>
+                </li>
+                <li>
+                    <div class="divider"></div>
+                </li>
+                <li>
+                    <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
+                </li>
+            }
+            else
+            {
+                <li>
+                    <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
+                </li>
+                <li>
+                    <a class="waves-effect" href="~/Members/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
+                </li>
 
-                     }  
-         }
-        <li>
-            <a class="waves-effect" href="~/Members/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
-        </li>
+            }
+        }
+
     </ul>
 
     @{ if (Request["ChooseGift"] != null)
