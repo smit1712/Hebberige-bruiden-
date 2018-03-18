@@ -4,17 +4,17 @@
 
     if (IsPost)
     {
-        AntiForgery.Validate();
-        var UserName = Request["Loginname"];
-        var Password = Request["password"];
+        // variable voor inloggen
+        string UserName = Request["Loginname"];
+        string Password = Request["password"];
         Validation.RequireFields("Loginname", "password");
         Validation.Add("Password", Validator.StringLength(16, 6));
-        var returnurl = Request["returnurl"];
+        string returnurl = Request["returnurl"];
         if (returnurl.IsEmpty())
         {
             returnurl = Href("~/Members/AccountPage");
         }
-
+        // validatie voor inloggen
         if (Validation.IsValid())
         {
             if (WebSecurity.UserExists(UserName) && WebSecurity.GetPasswordFailuresSinceLastSuccess(UserName) >= 4 && WebSecurity.GetLastPasswordFailureDate(UserName).AddMinutes(2) > DateTime.UtcNow)
@@ -67,47 +67,45 @@
                     <label for="password">Password</label>
                 </div>
             </div>
-
             <button class="btn waves-effect waves-light red " type="submit" name="action">
                 Login
-
                 <i class="material-icons login"></i>
-
-
             </button>
         </form>
     </div>
 
     <!--Side NAV for Users-->
+    <!--authentiseerde gebruikers hebben andere opties dan normale gebruikers-->
     <ul id="slide-out" class="side-nav">
         <li>
             <a class="waves-effect" href="~/index.cshtml">Home <i class="material-icons">home</i></a>
         </li> @{if (WebSecurity.IsAuthenticated == false)
-            {
-                <li>
-                    <div class="divider"></div>
-                </li>
-                <li>
-                    <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
-                </li>
-            }
-            else
+        {
+            <li>
+                <div class="divider"></div>
+            </li>
+            <li>
+                <a class="waves-effect" href="~/Account/SignIn.cshtml">Signin</a>
+            </li>
+        }
+        else
             {
                 <li>
                     <a class="waves-effect" href="~/Account/Logout.cshtml">Logout <i class="material-icons">Logout</i></a>
                 </li>
+                <li>
+                    <a class="waves-effect" href="~/Members/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
+                </li>
 
             }
         }
-        <li>
-            <a class="waves-effect" href="~/Members/AccountPage.cshtml">Account <i class="material-icons">face</i></a>
-        </li>
+    </ul>
 
-        <!--Scripts-->
-        <script>
-            // Initialize collapse button
-            $(".button-collapse").sideNav();
-        </script>
+    <!--Scripts-->
+    <script>
+        // Initialize collapse button
+        $(".button-collapse").sideNav();
+    </script>
 
 
 

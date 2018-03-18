@@ -1,4 +1,12 @@
-﻿<!DOCTYPE html>
+﻿@{ 
+    // security tegen scrips
+    if (IsPost)
+    {
+        AntiForgery.Validate();
+    }
+}
+
+<!DOCTYPE html>
 <html>
 <head>
     <title>GiftTool</title>

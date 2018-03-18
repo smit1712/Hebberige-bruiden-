@@ -6,12 +6,18 @@
     string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\Gift_database.mdf;Integrated Security=True";
     string provider = "System.Data.SqlClient";
     Database db = Database.OpenConnectionString(connectionString, provider);
-    //Input giftkey code
+    //Input giftkey code:
+    //Kijkt of de form GiftKeyname ingevuld is, zoja dan maakt hij selectGiftQuery gebruikbaar
     dynamic SelectGiftQuery = null;
+    string hidden = null;
+    if (Request["GiftKeyname"] == null)
+    {
+        hidden = "hiddendiv";
+    }
     string key = Request["GiftKeyname"];
     if (key == null)
     {
-        key = null;
+
 
         SelectGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = '0' Order by Priority");
     }
@@ -21,11 +27,11 @@
     }
 
     // choose gift code
+    // kijkt of er een gift geselecteerd is en deze bij de ingevoerde key hoord. Als dit zo is wordt de gift uit de database gehaald.
     int count = 0;
-    string SelectedGift = null;
-    dynamic RemoveGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey =@0", key);
+    string SelectedGift = Request["ChooseGift"];
+    dynamic RemoveGiftQuery = db.Query("SELECT Gift from Gifts where GiftKey = @0", key);
     dynamic RemoveGiftkeyQuery = db.Query("SELECT GiftKey from Gifts where GiftKey = @0", key);
-    SelectedGift = Request["ChooseGift"];
 
     foreach (dynamic row in db.Query("SELECT Gift From Gifts "))
     {
@@ -54,30 +60,22 @@
     @RenderPage("~/Shared/_Header.cshtml")
 
     <!--GiftKey-->
+    <!--Form om de Giftkey op te vragen-->
     <form method="post">
         <div class="row center-align">
             <div class="col s5 m5 l5">
-
                 <div class="input-field">
                     <input id="CollectioniD" type="text" name="GiftKeyname" value="@key" class="validate" />
                     <label for="CollectioniD"> GiftKey</label>
                 </div>
-
-                <div class=" col s1 m1 l1 center-align">
-                    <button class="btn waves-effect waves-light" type="submit" name="action">
-                        Submit
-                        <i class="material-icons right">send</i>
-
-                    </button>
-                </div>
-
             </div>
         </div>
         <!--Name&Gift-->
+        <!--wanneer de giftkey ingevoerd is worden de bijbehoordende dropdown menu weer gegeven-->
         <div class="row center-align">
             <div class="col s5 m5 l5 ">
-                <div class=" input-field col s10 m10 l10">
-                    <select name="ChooseGift">
+                <div class=" input-field col s10 m10 l10 @hidden">
+                    <select name="ChooseGift"   >
                         <option value="" disabled selected></option>
                         @{ int Giftcount = 0;
                             if (SelectGiftQuery.Count != 0)
@@ -106,6 +104,7 @@
     </form>
 
     <!-- GiftList-->
+    <!--Als de giftkey ingevoerd is worden alle gifts weer gegeven van die lijst, gesorteerd op prioriteit.  -->
     <div class="row center-align">
         <div class=" col s5 m5 l5">
             <ul class="collection">
@@ -132,6 +131,7 @@
 
 
     <!--Side NAV for Users-->
+<!--authentiseerde gebruikers hebben andere opties dan normale gebruikers-->
     <ul id="slide-out" class="side-nav">
         @{if (WebSecurity.IsAuthenticated == false)
             {
@@ -159,13 +159,14 @@
 
     </ul>
 
-    @{ if (Request["ChooseGift"] != null)
+    @{// de pagina wordt gerefreshed als er een gift gekozen is.
+        if (Request["ChooseGift"] != null)
         {
             Response.Redirect("~/index.cshtml");
         }
     }
 
-    <!--Scripts-->
+    <!--Scripts for materialize-->
     <script>
         // Initialize collapse button
         $(".button-collapse").sideNav();

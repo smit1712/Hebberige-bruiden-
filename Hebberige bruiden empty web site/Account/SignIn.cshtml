@@ -1,31 +1,27 @@
 ﻿@using WebMatrix.WebData;
 
 @{
-    WebMail.SmtpServer = "smtp.gmail.com";
-    WebMail.SmtpPort = 25;
-    WebMail.EnableSsl = true;
-    WebMail.UserName = "buzzzerz2@gmail.com";
-    WebMail.Password = "Jolanda1";
-    WebMail.From = "buzzzerz2@gmail.com";
+    // variable nodig voor webmatrix security helper
+    string Email = "";
+    string Forename = "";
+    string Surname = "";
+    // variable voor error messages
+    string message = "";
+    //// security tegen scrips
+    //if (IsPost)
+    //{
+    //    AntiForgery.Validate();
+    //}
 
-    var Email = "";
-    var Forename = "";
-    var Surname = "";
-
-    var message = "";
-    if (IsPost)
-    {
-        AntiForgery.Validate();
-    }
-
+    // variable worden gevuld met forms
     Email = Request["Email"];
-    var Password = Request["Password"];
-    var ConfirmPassword = Request["ConfirmPassword"];
+    string Password = Request["Password"];
+    string ConfirmPassword = Request["ConfirmPassword"];
     Forename = Request["Forename"];
     Surname = Request["Surname"];
 
 
-    //VALIDATION
+    //nodige formfield validatie
     Validation.RequireFields("Password", "ConfirmPassword");
 
     Validation.Add("Password", Validator.StringLength(16, 6));
@@ -35,7 +31,7 @@
     }
 
 
-    //ATTEMPT TO CREATE THE ACCOUNT
+    // trycatch voor het aanmaken van users,   smtp server werkt echter niet, Confirmation is daarom niet nodig
     if (Validation.IsValid())
     {
         try
@@ -92,8 +88,6 @@
                 <div class="input-field col l6 m6 s6">
                     <input name="Password" id="Password" type="password" class="validate" value="@Password" required>
                     <label for="password">Password</label>
-
-
                 </div>
                 <div class="input-field col l6 m6 s6">
                     <input name="ConfirmPassword" id="ConfirmPassword" type="password" class="validate" value="@ConfirmPassword" required>
@@ -115,6 +109,7 @@
     </div>
 
     <!--Side NAV for Users-->
+    <!--authentiseerde gebruikers hebben andere opties dan normale gebruikers-->
     <ul id="slide-out" class="side-nav">
         @{if (WebSecurity.IsAuthenticated == false)
             {
